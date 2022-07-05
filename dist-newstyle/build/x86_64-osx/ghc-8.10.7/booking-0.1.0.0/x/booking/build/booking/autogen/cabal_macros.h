@@ -20,6 +20,16 @@
   (major1) == 4 && (major2) <  14 || \
   (major1) == 4 && (major2) == 14 && (minor) <= 3)
 #endif /* MIN_VERSION_base */
+/* package deepseq-1.4.4.0 */
+#ifndef VERSION_deepseq
+#define VERSION_deepseq "1.4.4.0"
+#endif /* VERSION_deepseq */
+#ifndef MIN_VERSION_deepseq
+#define MIN_VERSION_deepseq(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  4 || \
+  (major1) == 1 && (major2) == 4 && (minor) <= 4)
+#endif /* MIN_VERSION_deepseq */
 /* package mtl-2.2.2 */
 #ifndef VERSION_mtl
 #define VERSION_mtl "2.2.2"
@@ -30,6 +40,16 @@
   (major1) == 2 && (major2) <  2 || \
   (major1) == 2 && (major2) == 2 && (minor) <= 2)
 #endif /* MIN_VERSION_mtl */
+/* package time-1.9.3 */
+#ifndef VERSION_time
+#define VERSION_time "1.9.3"
+#endif /* VERSION_time */
+#ifndef MIN_VERSION_time
+#define MIN_VERSION_time(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  9 || \
+  (major1) == 1 && (major2) == 9 && (minor) <= 3)
+#endif /* MIN_VERSION_time */
 
 /* tool gcc-13.1.6 */
 #ifndef TOOL_VERSION_gcc
