@@ -15,7 +15,7 @@ data ListAvailable = ListAvailable {availableserver :: People, avaialablewaktu :
 data ListBooking = ListBooking {bookingserver :: People, bookingwaktu :: String, pasien :: People}
     deriving (Show)
 
-data ModeView = Viewing | Booking deriving Show
+data ModeView = Viewing | Booking | Patient deriving Show
 
 type ListDoctors = [People]
 type ListConsultants = [People]
@@ -47,14 +47,28 @@ getPatients _ _ _ = putStrLn "-"
 getOneLine :: People -> Int  -> ModeView -> IO()
 getOneLine People { nama = vnama, mobileNumber = vhp, status = vstatus} n modeview = do
     case modeview of 
-        Viewing -> do
-            execStateT cetakState (vnama ++ "\t" ++ vhp ++ "\t" ++ (if vstatus == True then " available" else " not available"))
-            return()
-        Booking ->  do
-            (if vstatus == True then execStateT cetakState (vnama ++ "\t" ++ vhp ++ "\t") 
-            else  execStateT cetakState "")
-            return()
+            Viewing -> do
+                            if vstatus == True then
+                                execStateT cetakState ((show n) ++ "\t" ++ vnama ++ "\t" ++ vhp ++ "\t" ++  " available")
+                                else
+                                    execStateT cetakState ("*" ++ "\t" ++ vnama ++ "\t" ++ vhp ++ "\t" ++  " not available")
+                            return()
+            Booking ->  do
+                            if vstatus == True then 
+                                execStateT cetakState ((show n) ++ "\t" ++ vnama ++ "\t" ++ vhp ++ "\t") 
+                                else 
+                                    execStateT cetakState ("") 
+                            return()
+            Patient ->  do
+                            if vstatus == True then 
+                                execStateT cetakState ((show n) ++ "\t" ++ vnama ++ "\t" ++ vhp ++ "\t") 
+                                else 
+                                    execStateT cetakState ("") 
+                            return()
     return()
+
+getPeopleName :: People -> String 
+getPeopleName People { nama = vnama, mobileNumber = vhp, status = vstatus} = vnama
 
 getListAvailable :: ListAvailables -> Int -> ModeView -> IO()
 getListAvailable (x:xs) urut modeview = do
@@ -67,19 +81,37 @@ getOneLineAvailable :: ListAvailable -> Int  -> ModeView -> IO()
 getOneLineAvailable ListAvailable {availableserver = vserver, avaialablewaktu = vwaktu} n modeview = do
     case modeview of 
         Viewing -> do
-            execStateT cetakState (vserver ++ "\t" ++ vwaktu)
+            execStateT cetakState (getPeopleName vserver ++ "\t" ++ vwaktu)
             return()
         Booking ->  do
             execStateT cetakState ""
             return()
+        Patient ->  do
+            execStateT cetakState ""
+            return()
     return()
 
-getListBooking :: ListAvailable -> Int -> ModeView -> IO()
+getListBooking :: ListBookings -> Int -> ModeView -> IO()
 getListBooking (x:xs) urut modeview = do
     let no = urut + 1
-    getOneLine x no modeview 
+    getOneLineBooking x no modeview 
     getListBooking xs no modeview 
 getListBooking _ _ _ = putStrLn "-" 
+
+getOneLineBooking :: ListBooking -> Int  -> ModeView -> IO()
+getOneLineBooking ListBooking {bookingserver = vserver, bookingwaktu = vwaktu} n modeview = do
+    case modeview of 
+        Viewing -> do
+            execStateT cetakState (getPeopleName vserver ++ "\t" ++ vwaktu)
+            return()
+        Booking ->  do
+            execStateT cetakState ""
+            return()
+        Patient ->  do
+            execStateT cetakState ""
+            return()
+    return()
+
 
 availableDoctors :: [People]
 availableDoctors = [
@@ -189,6 +221,12 @@ bookdoctormenu = do
     execStateT cetakState "Book Doctor"
     execStateT cetakState "============="
     getDoctors availableDoctors 0 Booking
+    execStateT cetakState "Choose:"
+    pilihandokter <- getLine
+    patientname <- getLine
+    appendBooking (pilihandokter ++ patientname)
+    execStateT cetakState "\ESC[32mInput Saved"
+    execStateT cetakState "\ESC[0m"
     execStateT cetakState "(b) back to menu"
     execStateT cetakState "(h) back to home menu"
     pilihan <- getLine
@@ -208,6 +246,13 @@ bookconsultantmenu = do
     execStateT cetakState "Book Consultant"
     execStateT cetakState "==============="
     getDoctors availableConsultants 0 Booking
+    execStateT cetakState "Choose:"
+    pilihanconnsultant <- getLine
+    execStateT cetakState "Enter Patient Name:"
+    patientname <- getLine
+    appendBooking (pilihanconnsultant ++ patientname)
+    execStateT cetakState "\ESC[32mInput Saved"
+    execStateT cetakState "\ESC[0m"
     execStateT cetakState "(b) back to menu"
     execStateT cetakState "(h) back to home menu"
     pilihan <- getLine
@@ -222,9 +267,9 @@ bookconsultantmenu = do
 
 myappointmentmenu :: IO()
 myappointmentmenu = do 
-    execStateT cetakState "My Appointment"
+    execStateT cetakState "Appointment"
     execStateT cetakState "=============="
-    getPatients bookingPatients 0 Viewing 
+    getPatients bookingPatients 0 Patient 
     execStateT cetakState "(b) back to menu"
     pilihan <- getLine
     case pilihan of 
@@ -237,8 +282,24 @@ myappointmentmenu = do
             return()
     return ()
 
+getPassword :: IO (Maybe String)
+getPassword = do 
+    s <- getLine
+    if isValid s then return $ Just s 
+    else return Nothing 
+    
+isValid :: String -> Bool
+isValid s = if s == "inipassword" then True else False
+
 adminmenu :: IO()
 adminmenu = do 
+    execStateT cetakState "Please enter Admin password"
+    maybe_value <- getPassword 
+    case maybe_value of
+        Just value -> do putStrLn "Password accepted"
+        Nothing -> do
+            putStrLn "Password invalid"
+            adminmenu
     execStateT cetakState "Admin Only"
     execStateT cetakState "=========="
     execStateT cetakState "(1) Add Schedule"
@@ -262,6 +323,46 @@ appendLog s = do
     appendFile namafile isifile
     return()
 
+appendSchedule :: String -> IO()
+appendSchedule s = do 
+    let namafile = "schedules.txt " 
+    let isifile =  s ++ "\n"
+    appendFile namafile isifile
+    return()
+
+appendBooking :: String -> IO()
+appendBooking s = do 
+    let namafile = "booking.txt " 
+    let isifile =  s ++ "\n"
+    appendFile namafile isifile
+    return()
+
+getMonth :: String -> String
+getMonth s = case s of
+                "1" -> "Jan"
+                "2" -> "Feb"
+                "3" -> "Mar"
+                "4" -> "Apr"
+                "5" -> "May"
+                "6" -> "Jun"
+                "7" -> "Jul"
+                "8" -> "Aug"
+                "9" -> "Sep"
+                "10" -> "Oct"
+                "11" -> "Nov"
+                "12" -> "Dec"
+                _ -> ""
+
+getSlot :: String -> String
+getSlot s = case s of 
+            "1" -> "9AM - 10AM"
+            "2" -> "10AM - 11AM"
+            "3" -> "11AM - 12nn"
+            "4" -> "2PM - 3PM"
+            "5" -> "3PM - 4PM"
+            "6" -> "4PM - 5PM"
+            _ -> ""
+
 adminaddmenu :: IO()
 adminaddmenu = do 
     execStateT cetakState "Admin Only - Add Schedule"
@@ -273,8 +374,16 @@ adminaddmenu = do
       c : s -> if c == 'd' || c == 'D' then 
         getDoctors availableDoctors 0 Viewing else 
         getConsultants availableConsultants 0 Viewing 
+    let savetipe = case pilihanTipe of
+            "D" -> "Doctor"
+            "C" -> "Consultant"
+            _ -> ""
+    execStateT cetakState "Choose : "
+    pilihanJadwal <- getLine
     execStateT cetakState "Enter Month (1-12)"
     pilihanMonth <- getLine
+    let savemonth = getMonth pilihanMonth 
+            
     execStateT cetakState "Enter Date (1-31)"
     pilihanDate <- getLine
     execStateT cetakState "Select Timeslot"
@@ -285,7 +394,10 @@ adminaddmenu = do
     execStateT cetakState "[5] 3PM - 4PM"
     execStateT cetakState "[6] 4PM - 5PM"
     pilihanSlot <- getLine
-    appendLog (pilihanTipe ++ pilihanDate ++ pilihanSlot)
+    let saveslot = getSlot pilihanSlot
+
+    appendSchedule (savetipe ++ "\t" ++ pilihanJadwal ++ "\t" ++ pilihanDate ++ "\t" ++ savemonth ++ "\t" ++ saveslot)
+    appendLog "Add New Schedule"
     execStateT cetakState "\ESC[32mInput Saved"
     execStateT cetakState "\ESC[0m"
     execStateT cetakState "(b) back to menu"
@@ -348,7 +460,7 @@ homemenu = do
     execStateT cetakState "Choose Menu: "
     execStateT cetakState "(1) View Schedule"
     execStateT cetakState "(2) Book Appointment"
-    execStateT cetakState "(3) View My Appointment"
+    execStateT cetakState "(3) View Appointment"
     execStateT cetakState "(4) Admin Only"
     execStateT cetakState "(q) Quit"
     pilihan <- getLine
