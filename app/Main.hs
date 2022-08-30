@@ -30,6 +30,9 @@ getDoctors (x:xs) urut modeview = do
     getDoctors xs no modeview 
 getDoctors _ _ _ = putStrLn "-" 
 
+getDoctorName :: ListDoctors -> [Char] -> String
+getDoctorName _ _ = "Sambo"
+
 getConsultants :: ListConsultants -> Int-> ModeView -> IO()
 getConsultants (x:xs) urut modeview = do
     let no = urut + 1
@@ -112,26 +115,33 @@ getOneLineBooking ListBooking {bookingserver = vserver, bookingwaktu = vwaktu} n
             return()
     return()
 
-
+-- Initiate Default Values --
 availableDoctors :: [People]
 availableDoctors = [
-    (People { nama = "Dr Jon" , mobileNumber = "081512345678931", status = True}),
-    (People { nama = "Dr Dre" , mobileNumber = "081512345678932", status = False}),
-    (People { nama = "Dr Tom" , mobileNumber = "081512345678933", status = True})
+    (People { nama = "Dr Jonh" , mobileNumber = "081512345678931", status = True}),
+    (People { nama = "Dr Drew" , mobileNumber = "081512345678932", status = False}),
+    (People { nama = "Dr Thomas" , mobileNumber = "081512345678933", status = True}),
+    (People { nama = "Dr Barry" , mobileNumber = "081512345678934", status = True}),
+    (People { nama = "Dr Allen" , mobileNumber = "081512345678935", status = True})
     ]
 
 availableConsultants :: [People]
 availableConsultants = [
     (People { nama = "Mr Hawk" , mobileNumber = "081512345678921", status = True}),
     (People { nama = "Ms Jean" , mobileNumber = "081512345678922", status = True}),
-    (People { nama = "Mr Hunt" , mobileNumber = "081512345678923", status = False})
+    (People { nama = "Ms Malfoy" , mobileNumber = "081512345678923", status = True}),
+    (People { nama = "Mr Ethan" , mobileNumber = "081512345678924", status = True}),
+    (People { nama = "Mr Hunt" , mobileNumber = "081512345678925", status = False})
     ]
 
+-- Initiate Sample Values --
 bookingPatients :: [People]
 bookingPatients = [
     (People { nama = "Mr Lee" , mobileNumber = "081512345678911", status = True}),
     (People { nama = "Ms Tee" , mobileNumber = "081512345678912", status = True}),
-    (People { nama = "Mr Man" , mobileNumber = "081512345678913", status = True})
+    (People { nama = "Mr James" , mobileNumber = "081512345678913", status = True}),
+    (People { nama = "Ms Dawson" , mobileNumber = "081512345678914", status = True}),
+    (People { nama = "Mr Man" , mobileNumber = "081512345678915", status = True})
     ]
 
 main :: IO ()
@@ -223,8 +233,12 @@ bookdoctormenu = do
     getDoctors availableDoctors 0 Booking
     execStateT cetakState "Choose:"
     pilihandokter <- getLine
+    execStateT cetakState "Enter Patient Name:"
     patientname <- getLine
-    appendBooking (pilihandokter ++ patientname)
+    execStateT cetakState "Enter Patient Mobile Number:"
+    patientmobilenumber <- getLine
+    let doctorname = getDoctorName availableDoctors pilihandokter
+    appendBooking (doctorname ++ "\t" ++ patientname ++ "\t" ++ patientmobilenumber)
     execStateT cetakState "\ESC[32mInput Saved"
     execStateT cetakState "\ESC[0m"
     execStateT cetakState "(b) back to menu"
@@ -247,10 +261,12 @@ bookconsultantmenu = do
     execStateT cetakState "==============="
     getDoctors availableConsultants 0 Booking
     execStateT cetakState "Choose:"
-    pilihanconnsultant <- getLine
+    pilihanconsultant <- getLine
     execStateT cetakState "Enter Patient Name:"
     patientname <- getLine
-    appendBooking (pilihanconnsultant ++ patientname)
+    execStateT cetakState "Enter Patient Mobile Number:"
+    patientmobilenumber <- getLine
+    appendBooking (pilihanconsultant ++ "\t" ++ patientname ++ "\t" ++ patientmobilenumber)
     execStateT cetakState "\ESC[32mInput Saved"
     execStateT cetakState "\ESC[0m"
     execStateT cetakState "(b) back to menu"
@@ -318,22 +334,22 @@ adminmenu = do
 
 appendLog :: String -> IO()
 appendLog s = do 
-    let namafile = "log.txt " 
-    let isifile =  "Log" ++ s ++ "\n"
+    let namafile = "log.txt" 
+    let isifile =  "Log: " ++ s ++ "\n"
     appendFile namafile isifile
     return()
 
 appendSchedule :: String -> IO()
 appendSchedule s = do 
-    let namafile = "schedules.txt " 
-    let isifile =  s ++ "\n"
+    let namafile = "schedules.txt" 
+    let isifile =  "Schedules:" ++ s ++ "\n"
     appendFile namafile isifile
     return()
 
 appendBooking :: String -> IO()
 appendBooking s = do 
-    let namafile = "booking.txt " 
-    let isifile =  s ++ "\n"
+    let namafile = "booking.txt" 
+    let isifile =  "Booking:" ++ s ++ "\n"
     appendFile namafile isifile
     return()
 
